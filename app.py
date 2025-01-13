@@ -60,7 +60,7 @@ st.write(f"### Your Wallet: {st.session_state.wallet} coins")
 
 mode = st.selectbox("Select a mode:", ["Match Winner Prediction", "Make a Team"])
 
-add_amount = st.number_input("Enter amount to add:", min_value=1, step=1)
+add_amount = st.number_input("Enter amount to add:", min_value=1, step=1, key="add_amount")
 if st.button("Add Money to Wallet") and add_amount > 0:
     st.session_state.wallet += add_amount
     st.success(f"You've successfully added {add_amount} coins to your wallet. Your new balance is {st.session_state.wallet} coins.")
@@ -69,44 +69,37 @@ if mode == "Match Winner Prediction":
     st.write("### Match Winner Prediction")
     selected_option = st.selectbox("Choose your bet:", betting_options)
 
-    if "bet_amount" not in st.session_state:
-        st.session_state.bet_amount = 0
-
-    bet_amount = st.number_input("Enter your bet amount:", min_value=1, max_value=st.session_state.wallet, step=1, key="bet_amount")
+    if st.session_state.wallet > 0:
+      bet_amount = st.number_input("Enter your bet amount:", min_value=1, max_value=st.session_state.wallet, step=1, key="bet_amount")
     
-    if bet_amount < 1:
-        st.warning("Bet amount must be greater than or equal to 1.")
+    else:
+        st.warning("Please Add coins to your wallet")
+
+    if st.session_state.wallet > 0:
+        if bet_amount < 1:
+            st.warning("Bet amount must be greater than or equal to 1.")
         
-    if st.button("Place Bet"):
-    
-        if  st.session_state.wallet <= 500:
-            result = simulate_result()
-            st.write(f"### The result is: {result}!")
-            if result==selected_option:
-              winnings = bet_amount * 3
-              st.session_state.wallet += winnings
-              st.success(f"Congratulations! You won {winnings} coins.")
+        if st.button("Place Bet"):
+            if st.session_state.wallet <= 500:
+                result = simulate_result()
+                st.write(f"### The result is: {result}!")
+                if result == selected_option:
+                    winnings = bet_amount * 3
+                    st.session_state.wallet += winnings
+                    st.success(f"Congratulations! You won {winnings} coins.")
 
-            elif selected_option != result:
-              st.session_state.wallet -= bet_amount
-              st.error(f"Oops! You lost {bet_amount} coins.")
+                elif selected_option != result:
+                    st.session_state.wallet -= bet_amount
+                    st.error(f"Oops! You lost {bet_amount} coins.")
 
-        elif st.session_state.wallet > 500:
-            st.session_state.wallet = max(2, st.session_state.wallet - 5 * bet_amount)
-            st.error(f"Oops! You have {st.session_state.wallet} coins left.")
+            elif st.session_state.wallet > 500:
+                st.session_state.wallet = max(2, st.session_state.wallet - 5 * bet_amount)
+                st.error(f"Oops! You have {st.session_state.wallet} coins left.")
 
-        if st.session_state.wallet < 1:
-            st.error("Game Over! Your wallet is empty.")
-            add_amount = st.number_input("Enter amount to add:", min_value=1, step=1)
-            if st.button("Add Money and Restart Betting"):
-                if add_amount > 0:
-                    st.session_state.wallet += add_amount
-                    st.success(f"You've added {add_amount} coins. Your new balance is {st.session_state.wallet} coins.")
-                    st.experimental_rerun()
+            if st.session_state.wallet < 1:
+                st.error("Game Over! Your wallet is empty.")
             else:
-                st.stop() 
-
-        st.write(f"### Updated Wallet: {st.session_state.wallet} coins")
+                st.write(f"### Updated Wallet: {st.session_state.wallet} coins")
 
 elif mode == "Make a Team":
     st.write("### Create Your Team")
@@ -115,49 +108,36 @@ elif mode == "Make a Team":
 
     if len(selected_players) == 11:
         total_points = calculate_team_points(selected_players)
-        #st.write(f"### Total Team Points: {total_points}")
     else:
         st.write("Select 11 players")
 
-    if "team_bet" not in st.session_state:
-        st.session_state.team_bet = 0
+    if st.session_state.wallet > 0:
+        team_bet = st.number_input("Enter your bet amount for your team:", min_value=1, max_value=st.session_state.wallet, step=1, key="team_bet")
+    else:
+        st.warning("Please enter coins to your wallet")
 
-    bet_amount = st.number_input("Enter your bet amount for your team:", min_value=1, max_value=st.session_state.wallet, step=1, key="team_bet")
-
-    if bet_amount < 1:
-        st.warning("Bet amount must be greater than or equal to 1.")
-        
     if st.button("Submit Team"):
         if len(selected_players) != 11:
             st.error("Please select 11 players to form your team.")
         else:
             if st.session_state.wallet <= 500:
                 total_points_result = total_players_points(total_points * 2)
-                #st.write(f"### Calculated Total Points Result: {total_points_result}")
                 
                 if total_points_result > total_points:
-                    st.session_state.wallet += bet_amount * 3
-                    st.success(f"Congratulations! You won {bet_amount * 3} coins.")
+                    st.session_state.wallet += team_bet * 3
+                    st.success(f"Congratulations! You won {team_bet * 3} coins.")
                 elif total_points_result < total_points:
-                    st.session_state.wallet -= bet_amount
-                    st.error(f"Oops! You lost {bet_amount} coins.")
+                    st.session_state.wallet -= team_bet
+                    st.error(f"Oops! You lost {team_bet} coins.")
                 else:
                     st.warning("No change in points, so no win/loss.")
 
             elif st.session_state.wallet > 500:
-                st.session_state.wallet = max(2, st.session_state.wallet - 5 * bet_amount)
+                st.session_state.wallet = max(2, st.session_state.wallet - 5 * team_bet)
                 st.error(f"Oops! You have {st.session_state.wallet} coins left.")
 
             if st.session_state.wallet < 1:
                 st.error("Game Over! Your wallet is empty.")
-                add_amount = st.number_input("Enter amount to add:", min_value=1, step=1)
-                if st.button("Add Money and Restart Betting"):
-                    if add_amount > 0:
-                        st.session_state.wallet += add_amount
-                        st.success(f"You've added {add_amount} coins. Your new balance is {st.session_state.wallet} coins.")
-                        st.experimental_rerun() 
-                else:
-                    st.stop()
 
 if st.button("Reset Wallet"):
     st.session_state.wallet = 100
